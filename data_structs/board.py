@@ -305,7 +305,7 @@ class Cutsaw(MutableMapping[ElementCutsaw, int]):
 
     def __init__(self, seq: List[Tuple[ElementCutsaw, int]] = []):
         super().__init__()
-        self.els: List[Tuple[ElementCutsaw, int]] = []
+        self.els: List[tuple[ElementCutsaw, int]] = []
         self.update(seq)
 
     def __hash__(self) -> int:  # type:ignore

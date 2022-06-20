@@ -1,6 +1,6 @@
 
 from typing import List, Dict
-# from convertation import TimeCounter
+from convertation import TimeCounter
 from data_structs.board import Board, BoardStack, Cutsaw, ElementCutsaw, StackElement
 
 
@@ -24,7 +24,7 @@ class Program:
             [StackElement(Board(*x), x[3]) for x in store_boards if x[3] > 0])
         self.optimize_map = optimize_map
         self.priority_map = priority_map[::-1]
-        # self.tc = TimeCounter(r'C:\Users\dimansf\Documents\coding\raspil_rt\tests\out.txt')
+        self.tc = TimeCounter(r'C:\Users\dimansf\Documents\coding\raspil_rt\tests\out.txt')
         self.width_saw = width_saw
         
         self.boards_by_id: Dict[int, BoardStack] = {}
@@ -34,7 +34,7 @@ class Program:
 
     def main(self):
         remain_iterations = 10000
-        # self.tc.mark('main')
+        self.tc.mark('main')
         while( len(self.priority_map)):
             
             stores = self.priority_map.pop()
@@ -44,8 +44,9 @@ class Program:
                         'Exceeded remain iteration limit: Over 10k iterations')
                 else:
                     remain_iterations -= 1
-            
-                
+            if __debug__:
+                self.tc.mark('main')
+                print("Elapsed time:", self.tc['main'] ) 
 
     def iteration(self, sclad_id: list[int]) -> int:
         """
@@ -53,12 +54,12 @@ class Program:
         при нулевом значении не удалось найти оптимальный распил
         """
         # разбить доски на группы по ид
-        # self.tc.mark('_to_order_boards_by_id')
+        self.tc.mark('_to_order_boards_by_id')
         self._to_order_boards_by_id(sclad_id)
-        # self.tc.mark('_to_order_boards_by_id')
-        # self.tc.mark('calculate_per_id')
+        self.tc.mark('_to_order_boards_by_id')
+        self.tc.mark('calculate_per_id')
         sub_result = self.calculate_per_id()
-        # self.tc.mark('calculate_per_id')
+        self.tc.mark('calculate_per_id')
         for cut_element in sub_result:
             self.store_boards -= StackElement(cut_element.store_board, 1)
             self.boards -= cut_element[0]
@@ -89,17 +90,17 @@ class Program:
         results: Cutsaw = Cutsaw()
         for (board_id, boards) in self.boards_by_id.items():
 
-            # self.tc.mark('calculate_per_id' + f'{board_id}')
+            self.tc.mark('calculate_per_id' + f'{board_id}')
             # 1. просчитать потенциально возможные комбинации
             boards_cutsaw = self.calculate_per_boards(
                 boards, self.store_boards_by_id[board_id])
-            # self.tc.mark('calculate_per_id' + f'{board_id}')
+            self.tc.mark('calculate_per_id' + f'{board_id}')
             # 2. отсеять неподходящие распилы
-            # self.tc.mark('thick_off_cutsaw_elements' + f'{board_id}')
+            self.tc.mark('thick_off_cutsaw_elements' + f'{board_id}')
             boards_cutsaw.thick_off_cutsaw_elements(
                 self.optimize_map, self.width_saw)
             results += boards_cutsaw
-            # self.tc.mark('thick_off_cutsaw_elements' + f'{board_id}')
+            self.tc.mark('thick_off_cutsaw_elements' + f'{board_id}')
 
         return results
 
@@ -108,11 +109,21 @@ class Program:
         Калькуляция палок и комбинаций под них
         для каждой палки из store_board
         '''
-        # self.tc.mark('calculate_per_boards' + f'{boards}'[:10])
-        res = Cutsaw([(self.combinate(
-            board.board, boards), 1) for board in store_boards])
-        # self.tc.mark('calculate_per_boards' + f'{boards}'[:10])
-        return res
+        self.tc.mark('calculate_per_boards' + f'{boards}'[:10])
+        res:List[tuple[ElementCutsaw, int]] = []
+        for board in store_boards:
+            self.tc.mark('calculate_per_boards_for_in' + f'{board}')
+            sub_r = (self.combinate(
+            board.board, boards), 1) 
+            res.append(sub_r)
+            self.tc.mark('calculate_per_boards_for_in' + f'{board}', 
+            key=f'sub_r len = {len(sub_r[0])}')
+
+        self.tc.mark('calculate_per_boards_Cutsaw_create', 'sum')
+        cutsw = Cutsaw(res)
+        self.tc.mark('calculate_per_boards_Cutsaw_create', 'sum')
+        self.tc.mark('calculate_per_boards' + f'{boards}'[:10])
+        return cutsw
 
     def combinate(self,  board: Board, other_boards: BoardStack, 
         current_stack: BoardStack = BoardStack()) -> ElementCutsaw:
@@ -125,13 +136,13 @@ class Program:
 
         for i in range(iteration_board.amount + 1):
             if len(board) >= len(current_stack) + i * iteration_board.len:
-                # self.tc.mark('combinate' + f'{board}', 'sum')
-                # self.tc.mark('combinate', 'sum')
+                self.tc.mark('combinate' + f'{board}', 'sum')
+                self.tc.mark('combinate', 'sum')
                 good_stack = current_stack + \
                     StackElement(iteration_board.board, i)
                 el_cutsaw.append(good_stack)
-                # self.tc.mark('combinate', 'sum')
-                # self.tc.mark('combinate' + f'{board}', 'sum')
+                self.tc.mark('combinate', 'sum')
+                self.tc.mark('combinate' + f'{board}', 'sum')
                 
                 el_cutsaw += self.combinate(board, other_boards, good_stack)
 

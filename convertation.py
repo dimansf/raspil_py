@@ -37,6 +37,7 @@ class TimeCounter(dict[str, list[float]]):
     def __init__(self, path:str) -> None:
         self.path = path
         self.inner_pair_counter:dict[str, int] = {}
+        self.inner_keys:dict[str, str] = {}
    
     def print(self, s:str):
         with open(self.path, 'w') as f:
@@ -44,12 +45,14 @@ class TimeCounter(dict[str, list[float]]):
     
         
     
-    def mark(self, name:str, flag:str=''):
+    def mark(self, name:str, flag:str='', key:str=''):
+        if key != '': self.inner_keys[name] = key 
         if self.inner_pair_counter.get(name, None) is None or\
             self.inner_pair_counter[name] % 2 == 0 :
             def operate():
                 self[name].append( perf_counter())
                 self.inner_pair_counter[name] = 1
+                
             try:
                 operate()
             except:
